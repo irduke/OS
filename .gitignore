@@ -42,6 +42,10 @@
 *.idb
 *.pdb
 
+# OS specific
+*.gz
+
+
 # Kernel Module Compile Results
 *.mod*
 *.cmd
