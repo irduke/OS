@@ -41,8 +41,6 @@ void parse_and_run_command(const std::string &command) {
 
     for(int i = 0; i < numCommands; i++) {
         std::vector<std::string> command = tokens[i];
-        std::string delimiter = "/bin/";
-        std::string parsed_command = command[0].substr(command[0].find(delimiter)+delimiter.length());
         int status;
         
         std::string func = command[0];
@@ -56,7 +54,8 @@ void parse_and_run_command(const std::string &command) {
 
         pid_t pid = fork();
         if(pid == 0) {
-            execlp(func.c_str(), parsed_command.c_str(), args, (char *)NULL);
+            const char * exec_file = func.c_str();
+            execlp(exec_file, exec_file, args, (char *)NULL);
         }
         else if(pid > 0) {
             waitpid(pid, &status, 0);
