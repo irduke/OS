@@ -72,7 +72,7 @@ void parse_and_run_command(const std::string &command) {
 
     while (!tokens.empty()) {
         //Create and init command struct
-        cmd * curr_command;
+        cmd curr_command;
         init_cmd(&curr_command);
         //Grab function to execute and pop from queue
         curr_command.func = tokens.front().c_str();
