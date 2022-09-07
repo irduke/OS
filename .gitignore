@@ -45,6 +45,7 @@
 # OS specific
 *.gz
 .vscode
+test.txt
 
 # Kernel Module Compile Results
 *.mod*
