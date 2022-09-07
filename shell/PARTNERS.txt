@@ -1,0 +1,7 @@
+isaac duke (ird2dpj)
+	- formed the the final logic of the codebase
+	- helped to debug string parsing & exec()
+	- finalized the code and submitted the final version
+sarah gould (sg4sgz)
+	- formed the basis of the codebase
+	- helped to debug final changes
