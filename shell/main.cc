@@ -66,8 +66,8 @@ void parse_and_run_command(const std::string &command) {
         init_cmd(&curr_command);
         //Grab function to execute and pop from queue
         curr_command.func = tokens.front().c_str();
-        tokens.pop();
-        while (curr_token != "|" && token_counter < num_tokens - 1) {
+        // tokens.pop();
+        while (curr_token != "|" && token_counter < num_tokens) {
             curr_token = tokens.front();
             curr_command.args.push_back(const_cast<char*>(curr_token.c_str()));
             curr_command.arg_index++;
@@ -86,7 +86,8 @@ void parse_and_run_command(const std::string &command) {
         pid_t pid = fork();
         if(pid == 0) {
             //Child
-            execvp(run_command.func, &run_command.args[0]);
+            char **argv = &run_command.args[0];
+            execvp(run_command.func, argv);
             perror("execvp");
             exit(errno);
         }
