@@ -66,10 +66,9 @@ void parse_and_run_command(const std::string &command) {
         init_cmd(&curr_command);
         //Grab function to execute and pop from queue
         curr_command.func = tokens.front().c_str();
-        // tokens.pop();
         while (curr_token != "|" && token_counter < num_tokens) {
             curr_token = tokens.front();
-            curr_command.args.push_back(const_cast<char*>(curr_token.c_str()));
+            curr_command.args.push_back(const_cast<char*>(tokens.front().c_str()));
             curr_command.arg_index++;
             token_counter++;
             tokens.pop();
@@ -79,7 +78,6 @@ void parse_and_run_command(const std::string &command) {
     }
 
     while (!command_queue.empty()) {
-        int status = 0;
         cmd run_command = command_queue.front();
         command_queue.pop();
 
@@ -93,13 +91,15 @@ void parse_and_run_command(const std::string &command) {
         }
         else if(pid > 0) {
             //Parent process, wait for child
-            waitpid(pid, &status, 0);
+            if(strcmp(run_command.args.at(run_command.args.size()-2), "&") != 0) {
+                int status;
+                waitpid(pid, &status, 0);
+                std::cout << run_command.func << " exit status: " << WEXITSTATUS(status) << std::endl;
+            }
         }
         else {
             std::cerr << "Fork" << std::endl;
         }
-
-        std::cout << run_command.func << " exit status: " << WEXITSTATUS(status) << std::endl;
     }
 }
 

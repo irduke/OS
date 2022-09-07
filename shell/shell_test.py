@@ -13,26 +13,6 @@ import time
 
 PROGRAM = ['./msh']
 
-def check_permission_denied():
-    did_fail = False
-    try:
-        os.mkdir('test/PDtest')
-        os.chmod('test/PDtest', 0o000)
-        try:
-            os.mkdir('test/PDtest/PDtest')
-            os.rmdir('test/PDtest/PDtest')
-        except:
-            did_fail = True
-    except:
-        pass
-    try:
-        os.chmod('test/PDtest', 0o700)
-        os.rmdir('test/PDtest')
-    except:
-        pass
-    return did_fail
-
-
 def create_permission_denied():
     try:
         os.mkdir('test/PD')
@@ -41,10 +21,6 @@ def create_permission_denied():
     os.chmod('test/PD', 0o000)
 
 def remove_permission_denied():
-    try:
-        os.chmod('test/PD', 0o700)
-    except:
-        pass
     os.rmdir('test/PD')
 
 def create_file(filename, contents):
@@ -74,9 +50,6 @@ BIN_CAT = find_executable('cat')
 USR_BIN_HEAD = find_executable('head')
 USR_BIN_WC = find_executable('wc')
 BIN_DD = find_executable('dd')
-
-HAVE_PERMISSION_DENIED = check_permission_denied()
-HAVE_PERMISSION_DENIED_MESSAGE = 'marking directories as non-writeable does not seem to make them non-writable'
 
 # We depend on 'dd' supporting status=none; check if this is true to skip those
 # tests if it is not.
@@ -108,7 +81,7 @@ HAVE_PROC_SELF_FD_MESSAGE = 'Linux-specific /proc/self/fd not found and used int
 # Some test cases have a 'extra_popen' argument, which are extra flags to pass
 # to subprocess.Popen
 
-NON_PIPE_TESTS = [
+PART_1 = [
     {
         'name': 'exit immediately',
         'input': ['exit'],
@@ -174,33 +147,6 @@ NON_PIPE_TESTS = [
         'input': [ BIN_FALSE + '','exit'],
         'stdout': ['> ' + BIN_FALSE + '.*[Ee]xit status: 1.*', '> '],
         'stderr': [],
-    },
-    {
-        'name': 'only redirections is invalid',
-        'input': ['> foo.txt < test/input.txt','exit'],
-        'stdout': [],
-        'stderr': ['.*invalid command.*'],
-        'allow_extra_stdout': True,
-        'allow_extra_stderr': True,
-        'create_files': {
-            'test/input.txt': 'This is an example input file.\nWhich has multiple lines.\n',
-        },
-    },
-    {
-        'name': 'redirection to nothing is invalid',
-        'input': [ BIN_TRUE + ' > ','exit'],
-        'stdout': [],
-        'stderr': ['.*invalid command.*'],
-        'allow_extra_stdout': True,
-        'allow_extra_stderr': True,
-    },
-    {
-        'name': 'redirection from nothing is invalid',
-        'input': [ BIN_TRUE + ' < ','exit'],
-        'stdout': [],
-        'stderr': ['.*invalid command.*'],
-        'allow_extra_stdout': True,
-        'allow_extra_stderr': True,
     },
     {
         'name': 'pass arguments',
@@ -417,6 +363,118 @@ NON_PIPE_TESTS = [
         'stderr': [],
     },
     {
+        'name': 'fork fails',
+        'input': [ BIN_ECHO + ' testing one two three', 'exit'],
+        'stdout': ['> > '],
+        'stderr': ['.+'], # some non-empty error message
+        'allow_extra_stderr': True,
+        'extra_popen': {
+            'preexec_fn': lambda: resource.setrlimit(resource.RLIMIT_NPROC, (0,0)),
+        },
+    },
+    {
+        'name': 'exec fails',
+        'input': ['test/invalid-exec', 'exit'],
+        'stdout': [],
+        'allow_extra_stdout': True,
+        'stderr': ['.+'], # some non-empty error message
+        'allow_extra_stderr': True,
+    },
+    {
+        'name': 'echo 100 times output',
+        'input': list(map(lambda i:  BIN_ECHO + ' %s' % (i), range(100))) + ['exit'],
+        'stdout': list(map(lambda i: '.*%s' % (i), range(100))), # .* for possible prefix of prompt
+        'stderr': [],
+        'allow_extra_stdout': True,
+    },
+    {
+        'name': 'echo 100 times exit status',
+        'input': list(map(lambda i:  BIN_ECHO + ' %s' % (i), range(100))) + ['exit'],
+        'stdout': list(map(lambda i: '.*exit status: 0.*', range(100))),
+        'stderr': [],
+        'allow_extra_stdout': True,
+    },
+    {
+        'name': 'non-existing command',
+        'input': ['/bin/trex', 'exit'],
+        'stdout': [],
+        'stderr': ['.*(?:No such file or directory|Command not found).*'],
+        'allow_extra_stdout': True,
+        'allow_extra_stderr': True,
+    },
+    {
+        'name': 'run example out and exit',
+        'input': ['test/example_out.sh', 'exit'],
+        'stdout': ['> foo bar baz'],
+        'stderr': [],
+        'allow_extra_stdout': True,
+    },
+    {
+        'name': 'run sample outputs and exit',
+        'input': ['test/sample_outputs.sh', 'exit'],
+        'stdout': ['> This is the contents of stdout.'],
+        'stderr': ['This is the contents of stderr.'],
+        'allow_extra_stdout': True,
+    },
+    {
+        'name': 'run sample outputs, then example out, then sample outputs, then exit',
+        'input': ['test/sample_outputs.sh', 'test/example_out.sh', 'test/sample_outputs.sh', 'exit'],
+        'stdout': ['> This is the contents of stdout.',
+                   '> foo bar baz',
+                   '> This is the contents of stdout.',
+                   '> ',
+                ],
+        'stderr': ['This is the contents of stderr.', 'This is the contents of stderr.'],
+        'allow_extra_stdout': True,
+    },
+    {
+        'name': 'run sample outputs, then example out, then sample outputs, then exit (no exit statues)',
+        'input': ['test/sample_outputs.sh', 'test/example_out.sh', 'test/sample_outputs.sh', 'exit'],
+        'stdout': ['> This is the contents of stdout.',
+                   '> foo bar baz',
+                   '> This is the contents of stdout.',
+                   '> ',
+                ],
+        'stderr': ['This is the contents of stderr.', 'This is the contents of stderr.'],
+        'allow_extra_stdout': True,
+    },
+    {
+        'name': 'echo and sleep',
+        'input': [ BIN_ECHO + ' a b c', '/bin/sleep 1', 'exit'],
+        'stdout': ['> a b c', '.*exit status.*', '.*exit status.*', '> '],
+        'stderr': [],
+    },
+]
+
+PART_2 = [
+    {
+        'name': 'only redirections is invalid',
+        'input': ['> foo.txt < test/input.txt','exit'],
+        'stdout': [],
+        'stderr': ['.*invalid command.*'],
+        'allow_extra_stdout': True,
+        'allow_extra_stderr': True,
+        'create_files': {
+            'test/input.txt': 'This is an example input file.\nWhich has multiple lines.\n',
+        },
+    },
+    {
+        'name': 'redirection to nothing is invalid',
+        'input': [ BIN_TRUE + ' > ','exit'],
+        'stdout': [],
+        'stderr': ['.*invalid command.*'],
+        'allow_extra_stdout': True,
+        'allow_extra_stderr': True,
+    },
+    {
+        'name': 'redirection from nothing is invalid',
+        'input': [ BIN_TRUE + ' < ','exit'],
+        'stdout': [],
+        'stderr': ['.*invalid command.*'],
+        'allow_extra_stdout': True,
+        'allow_extra_stderr': True,
+    },
+    {
         'name': 'redirect stdin inode',
         'input': [ '/usr/bin/stat -L -c %i/%d /proc/self/fd/0 < test/input.txt', 'exit'],
         'stdout': [
@@ -479,24 +537,6 @@ NON_PIPE_TESTS = [
         },
         'compatible': DD_OKAY,
         'compatible_message': DD_OKAY_MESSAGE,
-    },
-    {
-        'name': 'fork fails',
-        'input': [ BIN_ECHO + ' testing one two three', 'exit'],
-        'stdout': ['> > '],
-        'stderr': ['.+'], # some non-empty error message
-        'allow_extra_stderr': True,
-        'extra_popen': {
-            'preexec_fn': lambda: resource.setrlimit(resource.RLIMIT_NPROC, (0,0)),
-        },
-    },
-    {
-        'name': 'exec fails',
-        'input': ['test/invalid-exec', 'exit'],
-        'stdout': [],
-        'allow_extra_stdout': True,
-        'stderr': ['.+'], # some non-empty error message
-        'allow_extra_stderr': True,
     },
     {
         'name': 'redirect stdout',
@@ -611,20 +651,6 @@ NON_PIPE_TESTS = [
         },
     },
     {
-        'name': 'echo 100 times output',
-        'input': list(map(lambda i:  BIN_ECHO + ' %s' % (i), range(100))) + ['exit'],
-        'stdout': list(map(lambda i: '.*%s' % (i), range(100))), # .* for possible prefix of prompt
-        'stderr': [],
-        'allow_extra_stdout': True,
-    },
-    {
-        'name': 'echo 100 times exit status',
-        'input': list(map(lambda i:  BIN_ECHO + ' %s' % (i), range(100))) + ['exit'],
-        'stdout': list(map(lambda i: '.*exit status: 0.*', range(100))),
-        'stderr': [],
-        'allow_extra_stdout': True,
-    },
-    {
         'name': '100 output redirections (with limit of 50 open files)',
         'input': list(map(lambda i:  BIN_ECHO + ' valuefrom%s > test/redirect-output-%s' % (i, i), range(100))) + ['exit'],
         'stdout': list(map(lambda i: '.*exit status: 0.*', range(100))),
@@ -659,50 +685,6 @@ NON_PIPE_TESTS = [
         'stderr': ['.*invalid command.*'],
         'allow_extra_stdout': True,
         'allow_extra_stderr': True,
-    },
-    {
-        'name': 'non-existing command',
-        'input': ['/bin/trex', 'exit'],
-        'stdout': [],
-        'stderr': ['.*(?:No such file or directory|Command not found).*'],
-        'allow_extra_stdout': True,
-        'allow_extra_stderr': True,
-    },
-    {
-        'name': 'run example out and exit',
-        'input': ['test/example_out.sh', 'exit'],
-        'stdout': ['> foo bar baz'],
-        'stderr': [],
-        'allow_extra_stdout': True,
-    },
-    {
-        'name': 'run sample outputs and exit',
-        'input': ['test/sample_outputs.sh', 'exit'],
-        'stdout': ['> This is the contents of stdout.'],
-        'stderr': ['This is the contents of stderr.'],
-        'allow_extra_stdout': True,
-    },
-    {
-        'name': 'run sample outputs, then example out, then sample outputs, then exit',
-        'input': ['test/sample_outputs.sh', 'test/example_out.sh', 'test/sample_outputs.sh', 'exit'],
-        'stdout': ['> This is the contents of stdout.',
-                   '> foo bar baz',
-                   '> This is the contents of stdout.',
-                   '> ',
-                ],
-        'stderr': ['This is the contents of stderr.', 'This is the contents of stderr.'],
-        'allow_extra_stdout': True,
-    },
-    {
-        'name': 'run sample outputs, then example out, then sample outputs, then exit (no exit statues)',
-        'input': ['test/sample_outputs.sh', 'test/example_out.sh', 'test/sample_outputs.sh', 'exit'],
-        'stdout': ['> This is the contents of stdout.',
-                   '> foo bar baz',
-                   '> This is the contents of stdout.',
-                   '> ',
-                ],
-        'stderr': ['This is the contents of stderr.', 'This is the contents of stderr.'],
-        'allow_extra_stdout': True,
     },
     {
         'name': 'redirect stdin, then use other input (no arguments)',
@@ -785,8 +767,6 @@ NON_PIPE_TESTS = [
         'allow_extra_stderr': True,
         'prepare_function': create_permission_denied,
         'cleanup_function': remove_permission_denied,
-        'compatible': HAVE_PERMISSION_DENIED,
-        'compatible_message': HAVE_PERMISSION_DENIED_MESSAGE,
     },
     {
         'name': 'error message when redirect output fails (2)',
@@ -797,14 +777,6 @@ NON_PIPE_TESTS = [
         'allow_extra_stderr': True,
         'prepare_function': create_permission_denied,
         'cleanup_function': remove_permission_denied,
-        'compatible': HAVE_PERMISSION_DENIED,
-        'compatible_message': HAVE_PERMISSION_DENIED_MESSAGE,
-    },
-    {
-        'name': 'echo and sleep',
-        'input': [ BIN_ECHO + ' a b c', '/bin/sleep 1', 'exit'],
-        'stdout': ['> a b c', '.*exit status.*', '.*exit status.*', '> '],
-        'stderr': [],
     },
     {
         'name': 'redirect stdin and stdout',
@@ -819,8 +791,6 @@ NON_PIPE_TESTS = [
         'stdout': ['.*[Ee]xit status: 0.*', '> '],
         'stderr': [],
     },
-]
-PIPE_TESTS = [
     # pipe related tests
     {
         'name': 'pipe in the end without a command is invalid',
@@ -832,7 +802,7 @@ PIPE_TESTS = [
     },
 
     {
-        'name': 'fork fails in a pipeline',
+        'name': 'fork fails in a pipeline ',
         'input': [ BIN_CAT + ' | ' + BIN_CAT + ' | ' + BIN_CAT + ' | ' + BIN_CAT + '', 'exit'],
         'stdout': ['> > '],
         'stderr': ['.+'], # some non-empty error message
@@ -992,7 +962,7 @@ PIPE_TESTS = [
     },
     {
         'name': 'large amount of data through pipe',
-        'input': [ USR_BIN_HEAD + ' -c 1048576 /dev/zero | ' + BIN_CAT + ' | /usr/bin/wc -c', 'exit'],
+        'input': [ USR_BIN_HEAD + ' -c 1M /dev/zero | ' + BIN_CAT + ' | /usr/bin/wc -c', 'exit'],
         'stdout': [ 
             '.*1048576.*',
             ],
@@ -1046,7 +1016,7 @@ PIPE_TESTS = [
     },
 ]
 
-TESTS = NON_PIPE_TESTS + PIPE_TESTS
+TESTS = PART_1 + PART_2
 
 def to_bytes(s):
     return bytes(s, 'UTF-8')
@@ -1333,7 +1303,7 @@ def _output_with_limit(label, value, max_lines, output_to, annotate=None):
     if len(value) > max_lines:
         print("  [plus {} more lines, not shown]".format(len(value) - max_lines), file=output_to)
 
-def run_and_output_tests(tests, max_lines=5, output_to=sys.stdout, verbose=False, seperate_asan=True, category_labels=None):
+def run_and_output_tests(tests, max_lines=5, output_to=sys.stdout, verbose=False, seperate_asan=True):
     categories = {}
     total_passed = 0
     total_failed = 0
@@ -1359,17 +1329,13 @@ def run_and_output_tests(tests, max_lines=5, output_to=sys.stdout, verbose=False
         total_possible += points
         result = run_test(seperate_asan=seperate_asan, **test)
         errors = result['errors']
-        if category_labels:
-            category_text = ' ({}, {} points)'.format(category_labels.get(category_name), points)
-        else:
-            category_text = ''
         if len(errors) == 0:
             total_passed += 1
             category['score'] += points
             total_score += points
             category['passed'].append(name)
             if verbose:
-                print("Passed test '{}'{}".format(name, category_text), "\n", file=output_to)
+                print("Passed test", name, "\n", file=output_to)
             if result.get('asan_errors') != None:
                 if len(result['asan_errors']) > 0:
                     _output_with_limit('Sanitizer output (main process) for test {}'.format(name), result['asan_errors'], max_lines, output_to)
@@ -1384,7 +1350,7 @@ def run_and_output_tests(tests, max_lines=5, output_to=sys.stdout, verbose=False
                 print("\n\nCould not run incompatible test", '"{}"'.format(name), "(try on a different machine)", file=output_to)
             else:
                 total_failed += 1
-                print("\n\nFailed test '{}'{}".format(name, category_text), file=output_to)
+                print("\n\nFailed test", name, file=output_to)
                 category['failed'].append(name)
             _output_with_limit('Test input', test['input'], max_lines, output_to)
             if not result.get('not_run'):
@@ -1420,10 +1386,16 @@ def run_and_output_tests(tests, max_lines=5, output_to=sys.stdout, verbose=False
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    if len(sys.argv) > 1 and sys.argv[1] == 'non-pipe':
-        TESTS = NON_PIPE_TESTS
-    elif len(sys.argv) > 1:
-        raise Exception("Unrecognized arguments {}".format(sys.argv))
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '1':
+            TESTS = PART_1
+        elif sys.argv[1] == '2':
+            TESTS = PART_2
+        elif sys.argv[1] == 'all':
+            TESTS = PART_1 + PART_2
+        else:
+            raise Exception("Unrecognized arguments {}".format(sys.argv))
+
     result = run_and_output_tests(TESTS)
     print("{} tests passed and {} tests failed.".format(result['passed'], result['failed']))
     if result['not_run'] > 0:

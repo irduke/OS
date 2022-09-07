@@ -4,13 +4,13 @@ CXXFLAGS = -Wall -Werror -pedantic -Og -g -std=c++17 -fsanitize=address -fsaniti
 all: msh
 
 msh: main.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ 
 
 clean:
 	rm -f *.o msh
 
 test: msh
-	python3 shell_test.py
+	python3 shell_test.py ${part}
 
 SUBMIT_FILENAME=shell-$(shell date +%Y%m%d%H%M%S).tar.gz
 
