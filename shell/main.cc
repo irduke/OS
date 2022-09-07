@@ -16,7 +16,7 @@
 
 typedef struct cmd
 {
-    const char * args[MAX_NUM_TOKENS];
+    std::vector<char*> args;
     bool redirect;
     int arg_index;
     const char * func;
@@ -56,16 +56,6 @@ void parse_and_run_command(const std::string &command) {
         tokens.push(t);
     }
 
-    if (DEBUG) {
-        std::cout << "Tokens: ";
-        std::queue<std::string> t_cpy = tokens;
-        while (!t_cpy.empty()) {
-            std::cout << t_cpy.front() << " ";
-            t_cpy.pop();
-        }
-        std::cout << std::endl;
-    }
-
     std::string curr_token;
     int num_tokens = tokens.size();
     int token_counter = 0;
@@ -79,29 +69,14 @@ void parse_and_run_command(const std::string &command) {
         tokens.pop();
         while (curr_token != "|" && token_counter < num_tokens - 1) {
             curr_token = tokens.front();
-            curr_command.args[curr_command.arg_index] = tokens.front().c_str();
+            curr_command.args.push_back(const_cast<char*>(curr_token.c_str()));
             curr_command.arg_index++;
             token_counter++;
             tokens.pop();
         }
-        curr_command.args[curr_command.arg_index] = NULL;
+        curr_command.args.push_back(NULL);
         command_queue.push(curr_command);
     }
-
-    if (DEBUG) {
-        std::queue<cmd> cmd_cpy = command_queue;
-        while (!cmd_cpy.empty()) {
-            std::cout << "Command: ";
-            cmd front = cmd_cpy.front();
-            std::cout << "num_args=" << front.arg_index << " " << front.func << " ";
-            for (int i = 0; i <= front.arg_index; i++) {
-                std::cout << front.args[i] << " ";
-            }
-            cmd_cpy.pop();
-            std::cout << std::endl;
-        }
-    }
-
 
     while (!command_queue.empty()) {
         int status = 0;
@@ -111,7 +86,7 @@ void parse_and_run_command(const std::string &command) {
         pid_t pid = fork();
         if(pid == 0) {
             //Child
-            execvp(run_command.func, (char **) run_command.args);
+            execvp(run_command.func, &run_command.args[0]);
             perror("execvp");
             exit(errno);
         }
@@ -128,7 +103,7 @@ void parse_and_run_command(const std::string &command) {
 }
 
 void init_cmd(cmd * command) {
-    memset(command->args, '\0' , sizeof(command->args));
+    //memset(command->args, '\0' , sizeof(command->args));
     command->redirect = false;
     command->arg_index = 0;
 }
