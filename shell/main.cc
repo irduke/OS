@@ -66,7 +66,7 @@ void parse_and_run_command(const std::string &command) {
         cmd curr_command;
         init_cmd(&curr_command);
         //Grab function to execute and pop from queue
-        curr_command.func = tokens.front().c_str();
+        curr_command.func = const_cast<char*>(tokens.front().c_str());
         while (curr_token != "|" && token_counter < num_tokens) {
             curr_token = tokens.front();
             curr_command.args.push_back(const_cast<char*>(tokens.front().c_str()));
