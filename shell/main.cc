@@ -9,6 +9,8 @@
 #include <vector>
 #include <sstream>  
 #include <queue>
+#include <cstdio>
+#include <cerrno>
 
 #define MAX_NUM_TOKENS 50
 #define DEBUG false
