@@ -49,30 +49,29 @@ void parse_and_run_command(const std::string &command) {
     }
 
     std::stringstream s(command);
-    std::queue<std::string> tokens;
+    std::vector<std::string> tokens;
     std::queue<cmd> command_queue;
     std::string t;
 
     while(s >> t) {
-        tokens.push(t);
+        tokens.push_back(t);
     }
 
     std::string curr_token;
     int num_tokens = tokens.size();
     int token_counter = 0;
 
-    while (!tokens.empty()) {
+    while (token_counter < num_tokens) {
         //Create and init command struct
         cmd curr_command;
         init_cmd(&curr_command);
         //Grab function to execute and pop from queue
-        curr_command.func = const_cast<char*>(tokens.front().c_str());
+        curr_command.func = const_cast<char*>(tokens.at(token_counter).c_str());
         while (curr_token != "|" && token_counter < num_tokens) {
-            curr_token = tokens.front();
-            curr_command.args.push_back(const_cast<char*>(tokens.front().c_str()));
+            curr_token = tokens.at(token_counter);
+            curr_command.args.push_back(const_cast<char*>(tokens.at(token_counter).c_str()));
             curr_command.arg_index++;
             token_counter++;
-            tokens.pop();
         }
         curr_command.args.push_back(NULL);
         command_queue.push(curr_command);
