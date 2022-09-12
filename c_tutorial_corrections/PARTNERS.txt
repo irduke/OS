@@ -1,0 +1,7 @@
+isaac duke (ird2dpj)
+	- formed the basis of the codebase & the final logic
+	- finalized the code and submitted the final version
+sarah gould (sg4sgz)
+	- worked on an additional approach for the codebase & helped to collaborate on the final version
+	- helped to debug final changes and create the Makefile
+    - made small modifications to Makefile & error handling for resubmission
