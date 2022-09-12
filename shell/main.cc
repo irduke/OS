@@ -11,6 +11,7 @@
 #include <queue>
 #include <cstdio>
 #include <cerrno>
+#include <regex>
 
 #define MAX_NUM_TOKENS 50
 #define DEBUG false
@@ -27,6 +28,9 @@ void init_cmd(cmd * command);
 
 void parse_and_run_command(const std::string &command);
 
+bool is_word(std::string token);
+
+bool is_well_formed(std::vector<char*> command);
 
 int main(void) {
     std::string command;
@@ -66,15 +70,22 @@ void parse_and_run_command(const std::string &command) {
         cmd curr_command;
         init_cmd(&curr_command);
         //Grab function to execute and pop from queue
+        curr_token = tokens.at(token_counter);
+        if(curr_token == "|") { 
+            // if pipe reached, jump to next token
+            token_counter++;
+        }
         curr_command.func = const_cast<char*>(tokens.at(token_counter).c_str());
-        while (curr_token != "|" && token_counter < num_tokens) {
+        while (token_counter < num_tokens && tokens.at(token_counter) != "|") {
             curr_token = tokens.at(token_counter);
             curr_command.args.push_back(const_cast<char*>(tokens.at(token_counter).c_str()));
             curr_command.arg_index++;
             token_counter++;
         }
-        curr_command.args.push_back(NULL);
-        command_queue.push(curr_command);
+        if(is_well_formed(curr_command.args)) {
+            curr_command.args.push_back(NULL);
+            command_queue.push(curr_command);
+        }
     }
 
     while (!command_queue.empty()) {
@@ -107,4 +118,38 @@ void init_cmd(cmd * command) {
     //memset(command->args, '\0' , sizeof(command->args));
     command->redirect = false;
     command->arg_index = 0;
+}
+
+bool is_word(std::string token) {
+    // Uses regex to check if a string is alphabetical
+    return std::regex_match(token, std::regex("^[A-Za-z]+$"));
+}
+
+bool is_well_formed(std::vector<char*> command) {
+    /*
+    Checks that each command meets the following conditions...
+    1) No more than one input redirection
+    2) No more than one output redirection
+    3) At least one or more words
+    */
+    bool is_well_formed = true;
+    int num_input_redirect = 0;
+    int num_output_redirect = 0;
+    int num_words = 0;    
+
+    for(int i = 0; i < command.size(); i++) {
+        if(i < command.size()-1) {
+            // verify redirect character & word token combination
+            if((strcmp(command.at(i), "<") == 0) && is_word(command.at(i+1))) num_input_redirect++;
+            else if((strcmp(command.at(i), ">") == 0) && is_word(command.at(i+1))) num_output_redirect++;
+        }
+        if(is_word(command.at(i))) num_words++;
+    }
+
+    if(num_input_redirect > 1 || num_output_redirect > 1 || num_words < 1) {
+        return !is_well_formed;
+    }
+    else {
+        return is_well_formed;
+    }
 }
