@@ -122,7 +122,7 @@ void init_cmd(cmd * command) {
 
 bool is_word(std::string token) {
     // Uses regex to check if a string is alphabetical
-    return std::regex_match(token, std::regex("^[A-Za-z]+$"));
+    return std::regex_match(token, std::regex("^[A-Za-z/]+$"));
 }
 
 bool is_well_formed(std::vector<char*> command) {
