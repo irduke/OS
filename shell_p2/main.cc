@@ -122,7 +122,7 @@ void parse_and_run_command(const std::string &command) {
 
 
 
-    int pipes[50][2];
+    int pipes[MAX_NUM_TOKENS][2];
     bool piped = (command_queue.size() > 1);
     int fd_read = -1;
     int fd_write = -1;
