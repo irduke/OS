@@ -24,6 +24,7 @@ typedef struct cmd
     const char * redir_out;
     const char * redir_in;
     pid_t parent_pid;
+    bool ampersand;
 } cmd;
 
 std::ostream& operator<<(std::ostream& os, const cmd& command) {
@@ -116,6 +117,9 @@ void parse_and_run_command(const std::string &command) {
                 token_counter++;
             }
         }
+        if (strcmp(curr_command.args.back(),"&") == 0) {
+            curr_command.ampersand = true;
+        }
         curr_command.args.push_back(NULL);
         command_queue.push_back(curr_command);
     }
@@ -203,9 +207,11 @@ void parse_and_run_command(const std::string &command) {
 
     int status;
     for (size_t i = 0; i < command_queue.size(); i++) {
-        status = 0;
-        waitpid(command_queue[i].parent_pid, &status, 0);
-        std::cout << command_queue[i].func << " exit status: " << WEXITSTATUS(status) << std::endl;
+        if (!command_queue[i].ampersand) {
+            status = 0;
+            waitpid(command_queue[i].parent_pid, &status, 0);
+            std::cout << command_queue[i].func << " exit status: " << WEXITSTATUS(status) << std::endl;
+        }
     }
 }
 
@@ -214,6 +220,7 @@ void init_cmd(cmd * command) {
     command->redir_in = "none";
     command->redir_out = "none";
     command->parent_pid = 0;
+    command->ampersand = false;
 }
 
 bool is_word(std::string token) {
