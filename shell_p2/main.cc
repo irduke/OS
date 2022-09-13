@@ -77,9 +77,9 @@ void parse_and_run_command(const std::string &command) {
     std::string curr_token;
     int num_tokens = tokens.size();
     int token_counter = 0;
-    
+
     if(!is_well_formed(tokens)) {
-        std::cout << "Malformed command" << std::endl;
+        std::cout << "Invalid command" << std::endl;
         exit(0);
     }
 
