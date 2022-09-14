@@ -128,6 +128,7 @@ void parse_and_run_command(const std::string &command) {
 
     int pipes[MAX_NUM_TOKENS][2];
     bool piped = (command_queue.size() > 1);
+    std::cout << piped << std::endl;
     int fd_read = -1;
     int fd_write = -1;
     int fd_prev = -1;
@@ -156,6 +157,7 @@ void parse_and_run_command(const std::string &command) {
             }
             //write end of pipe
             if (i < command_queue.size() - 1) {
+                std::cout << "in if" << std::endl;
                 dup2(fd_write, STDOUT_FILENO);
                 close(fd_read);
                 close(fd_write);
@@ -173,7 +175,7 @@ void parse_and_run_command(const std::string &command) {
 
             //setup output redirection if need be
             if (strcmp(run_command.redir_out, "none") != 0) {
-                int output_file = open(run_command.redir_in, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+                int output_file = open(run_command.redir_out, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
                 if (output_file < 0) {
                     perror("Error opening output file");
                     exit(errno);
