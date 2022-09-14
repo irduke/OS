@@ -128,7 +128,6 @@ void parse_and_run_command(const std::string &command) {
 
     int pipes[MAX_NUM_TOKENS][2];
     bool piped = (command_queue.size() > 1);
-    std::cout << piped << std::endl;
     int fd_read = -1;
     int fd_write = -1;
     int fd_prev = -1;
@@ -157,7 +156,6 @@ void parse_and_run_command(const std::string &command) {
             }
             //write end of pipe
             if (i < command_queue.size() - 1) {
-                std::cout << "in if" << std::endl;
                 dup2(fd_write, STDOUT_FILENO);
                 close(fd_read);
                 close(fd_write);
