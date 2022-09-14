@@ -206,7 +206,8 @@ void parse_and_run_command(const std::string &command) {
             }
         }
         else {
-            std::cerr << "Fork" << std::endl;
+            std::cerr << "Fork failure occured" << std::endl;
+            return;
         }
     }
 
@@ -247,7 +248,7 @@ bool is_well_formed(std::vector<std::string> tokens) {
 
     if(!is_word(tokens.back())) {
         // last token MUST be a word
-        return false;
+        is_well_formed = false;
     }
 
     for(size_t i = 0; i < tokens.size(); i++) {
@@ -256,8 +257,14 @@ bool is_well_formed(std::vector<std::string> tokens) {
                 // verify redirect character & word token combination
                 if((tokens[i] == "<") && is_word(tokens[i+1])) num_input_redirect++;
                 else if((tokens[i] == ">") && is_word(tokens[i+1])) num_output_redirect++;
-                else if((tokens[i] == "<") && !is_word(tokens[i+1])) return false;
-                else if((tokens[i] == ">") && !is_word(tokens[i+1])) return false;
+                else if((tokens[i] == "<") && !is_word(tokens[i+1])) {
+                    std::cout << tokens[0] << " exit status: 255" << std::endl;
+                    return false;
+                }
+                else if((tokens[i] == ">") && !is_word(tokens[i+1])) {
+                    std::cout << tokens[0] << " exit status: 255" << std::endl;
+                    return false;
+                }
             }
             // word token verification (not part of redirection)
             if (i != 0) {
@@ -269,8 +276,8 @@ bool is_well_formed(std::vector<std::string> tokens) {
             }
         }
         else {  // check for previous command & reset counts
-            if(num_input_redirect > 1 || num_output_redirect > 1 || num_words < 1) {
-                return !is_well_formed;
+            if(num_input_redirect > 1 || num_output_redirect > 1 || num_words < 1 || (i == tokens.size() - 1)) {
+                return false;
             }
             num_input_redirect = 0;
             num_output_redirect = 0;
