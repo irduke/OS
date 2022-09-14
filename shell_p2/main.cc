@@ -80,7 +80,7 @@ void parse_and_run_command(const std::string &command) {
     int token_counter = 0;
 
     if(!is_well_formed(tokens)) {
-        std::cout << "Invalid command" << std::endl;
+        std::cerr << "Invalid command" << std::endl;
         exit(0);
     }
 
@@ -112,6 +112,11 @@ void parse_and_run_command(const std::string &command) {
                 token_counter++;
             }
             else {
+                if (curr_command.args.size() == 0 &&
+                    curr_command.func != const_cast<char *>(tokens.at(token_counter).c_str()))
+                {   // reset func if redirection was @ beginning
+                    curr_command.func = const_cast<char *>(tokens.at(token_counter).c_str());
+                }
                 curr_command.args.push_back(const_cast<char*>(tokens.at(token_counter).c_str()));
                 curr_command.arg_index++;
                 token_counter++;
@@ -201,7 +206,8 @@ void parse_and_run_command(const std::string &command) {
             }
         }
         else {
-            std::cerr << "Fork" << std::endl;
+            std::cerr << "Fork failure occured" << std::endl;
+            return;
         }
     }
 
@@ -224,8 +230,8 @@ void init_cmd(cmd * command) {
 }
 
 bool is_word(std::string token) {
-    // Uses regex to check if a string is a word token
-    return std::regex_match(token, std::regex("[^<>|]+"));
+    // Checks if a string is a word token
+    return ((token != ">") && (token != "<") && (token != "|"));
 }
 
 bool is_well_formed(std::vector<std::string> tokens) {
@@ -240,9 +246,9 @@ bool is_well_formed(std::vector<std::string> tokens) {
     int num_output_redirect = 0;
     int num_words = 0; 
 
-    if(!is_word(tokens[0]) || !is_word(tokens.back())) {
-        // first and last token MUST be a word
-        return false;
+    if(!is_word(tokens.back())) {
+        // last token MUST be a word
+        is_well_formed = false;
     }
 
     for(size_t i = 0; i < tokens.size(); i++) {
@@ -251,14 +257,27 @@ bool is_well_formed(std::vector<std::string> tokens) {
                 // verify redirect character & word token combination
                 if((tokens[i] == "<") && is_word(tokens[i+1])) num_input_redirect++;
                 else if((tokens[i] == ">") && is_word(tokens[i+1])) num_output_redirect++;
-                else if((tokens[i] == "<") && !is_word(tokens[i+1])) return false;
-                else if((tokens[i] == ">") && !is_word(tokens[i+1])) return false;
+                else if((tokens[i] == "<") && !is_word(tokens[i+1])) {
+                    std::cout << tokens[0] << " exit status: 255" << std::endl;
+                    return false;
+                }
+                else if((tokens[i] == ">") && !is_word(tokens[i+1])) {
+                    std::cout << tokens[0] << " exit status: 255" << std::endl;
+                    return false;
+                }
             }
-            if(is_word(tokens[i])) num_words++;
+            // word token verification (not part of redirection)
+            if (i != 0) {
+                if (is_word(tokens[i]) && tokens[i - 1] != ">" && tokens[i - 1] != "<")
+                    num_words++;
+            }
+            else {
+                if (is_word(tokens[0])) num_words++;
+            }
         }
         else {  // check for previous command & reset counts
-            if(num_input_redirect > 1 || num_output_redirect > 1 || num_words < 1) {
-                return !is_well_formed;
+            if(num_input_redirect > 1 || num_output_redirect > 1 || num_words < 1 || (i == tokens.size() - 1)) {
+                return false;
             }
             num_input_redirect = 0;
             num_output_redirect = 0;
