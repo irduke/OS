@@ -5,7 +5,7 @@
 int main(int argc, char**argv) {
     uint wc;
     setwritecount(0);
-    printf(1, "test");
+    printf(1, "test\n");
 
     wc = writecount();
     printf(1, "writecount: %d\n", wc);

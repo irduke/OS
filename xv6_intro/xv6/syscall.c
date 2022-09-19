@@ -133,6 +133,7 @@ static int (*syscalls[])(void) = {
 [SYS_yield] sys_yield,
 [SYS_shutdown] sys_shutdown,
 [SYS_writecount] sys_writecount,
+[SYS_setwritecount] sys_setwritecount,
 };
 
 void
