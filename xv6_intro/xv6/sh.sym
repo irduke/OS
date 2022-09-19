@@ -10,12 +10,12 @@
 00000000 .debug_str
 00000000 .comment
 00000000 sh.c
-000010e0 buf.1127
+000010e0 buf.1131
 00000000 ulib.c
 00000000 printf.c
 00000c6e putc
 00000c88 printint
-000010bc digits.1089
+000010bc digits.1093
 00000000 umalloc.c
 000011a8 freep
 00000ef0 morecore

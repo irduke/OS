@@ -11,7 +11,7 @@
 00000000 printf.c
 0000010d putc
 00000127 printint
-0000032c digits.1089
+0000032c digits.1093
 000000fd yield
 000001ae printf
 000000a5 mknod

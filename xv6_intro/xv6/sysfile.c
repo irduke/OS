@@ -17,7 +17,7 @@
 #include "fcntl.h"
 
 
-uint writecount;
+int writecount;
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -448,13 +448,13 @@ sys_pipe(void)
   return 0;
 }
 
-int writecount(void) {
+int sys_writecount(void) {
   return writecount;
 }
 
-int setwritecount(void) {
+int sys_setwritecount(void) {
   int newcount;
-  argint(&newcount, 0);
+  argint(0, &newcount);
   writecount = newcount;
   return 0;
 }

@@ -13,7 +13,7 @@
 00000000 printf.c
 0000051e putc
 00000538 printint
-0000076c digits.1089
+0000076c digits.1093
 000002b1 strcpy
 0000050e yield
 000005bf printf

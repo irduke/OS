@@ -16,7 +16,7 @@
 00000000 printf.c
 00003882 putc
 0000389c printint
-00005380 digits.1089
+00005380 digits.1093
 00000000 umalloc.c
 00005440 freep
 00003b04 morecore
