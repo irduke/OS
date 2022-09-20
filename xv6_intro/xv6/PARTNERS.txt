@@ -1,0 +1,6 @@
+isaac duke (ird2dpj)
+	- formed the basis of the codebase & the final logic
+    - helped to debug the Makefile
+sarah gould (sg4sgz)
+	- worked on an additional approach for the codebase & helped to collaborate on the final version
+	- created the PARTNERS file and submitted final version
