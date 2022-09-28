@@ -116,15 +116,20 @@ int sys_gettickets(void) {
   return myproc()->tickets;
 }
 
-int getprocessinfo(struct processes_info *p) {
-  // traverse ptable
+int sys_getprocessinfo(void) {
   int np;
+  int n;
+  struct processes_info *p;
+
   np = getnumprocesses();
+  // traverses ptable for number of non-UNUSED process
+  argptr(0, &p, n);
   p->num_processes = np;
 
   struct proc *proc;
   int i;
   for(i = 0; i < np; i++) {
+    // assigns values for each ith non-UNUSED process
     proc = getproc(i);
     p->pids[i] = proc->pid;
     p->times_scheduled[i] = proc->times_scheduled;

@@ -24,3 +24,4 @@
 #define SYS_shutdown  23
 #define SYS_settickets 24
 #define SYS_gettickets 25
+#define SYS_getprocessinfo 26
