@@ -102,3 +102,34 @@ int sys_shutdown(void)
   shutdown();
   return 0;
 }
+
+int sys_settickets(void) {
+  int ticketnum;
+  struct proc *curproc = myproc();
+
+  argint(0, &ticketnum);
+  curproc->tickets = ticketnum;
+  return 0;
+}
+
+int sys_gettickets(void) {
+  return myproc()->pid;
+}
+
+int getprocessinfo(struct processes_info *p) {
+  // traverse ptable
+  int np;
+  np = getnumprocesses();
+  p->num_processes = np;
+
+  struct proc *proc;
+  int i;
+  for(i = 0; i < np; i++) {
+    proc = getproc(i);
+    p->pids[i] = proc->pid;
+    p->times_scheduled[i] = proc->times_scheduled;
+    p->tickets[i] = proc->tickets;
+  }
+
+  return 0;
+}
