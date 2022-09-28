@@ -113,7 +113,7 @@ int sys_settickets(void) {
 }
 
 int sys_gettickets(void) {
-  return myproc()->pid;
+  return myproc()->tickets;
 }
 
 int getprocessinfo(struct processes_info *p) {
