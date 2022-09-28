@@ -118,12 +118,11 @@ int sys_gettickets(void) {
 
 int sys_getprocessinfo(void) {
   int np;
-  int n;
   struct processes_info *p;
 
   np = getnumprocesses();
   // traverses ptable for number of non-UNUSED process
-  argptr(0, &p, n);
+  argptr(0, &p, sizeof(*p));
   p->num_processes = np;
 
   struct proc *proc;
