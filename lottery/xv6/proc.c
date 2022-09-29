@@ -532,3 +532,37 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+// traverses ptable & returns number of non-UNUSED processes
+int getnumprocesses(void) {
+  int np;
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state == UNUSED) {
+      continue;
+    }
+    np++;
+  }
+  release(&ptable.lock);
+
+  return np;
+}
+
+// returns the process with the given non-USUSED process index
+struct proc* getproc(int i) {
+  struct proc *p;
+  int ith = 0;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state != UNUSED && ith == i)  {
+      ith++;
+      return p;
+    }
+  }
+  release(&ptable.lock);
+
+  return -1;
+}

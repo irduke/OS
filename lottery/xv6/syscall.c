@@ -105,6 +105,9 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_yield(void);
 extern int sys_shutdown(void);
+extern int sys_settickets(void);
+extern int sys_gettickets(void);
+extern int sys_getprocessinfo(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -130,6 +133,9 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_yield] sys_yield,
 [SYS_shutdown] sys_shutdown,
+[SYS_settickets] sys_settickets,
+[SYS_gettickets] sys_gettickets,
+[SYS_getprocessinfo] sys_getprocessinfo
 };
 
 void
