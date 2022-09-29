@@ -209,7 +209,6 @@ fork(void)
   *np->tf = *curproc->tf;
 
   np->times_scheduled = 0;
-  np->tickets = curproc->tickets;
   
 
   // Clear %eax so that fork returns 0 in the child.
@@ -225,9 +224,10 @@ fork(void)
   pid = np->pid;
 
   acquire(&ptable.lock);
-
+  np->tickets = curproc->tickets;
+  // np->tickets = 0;
+  // cprintf("curproc tickets: %d\n", curproc->tickets);
   np->state = RUNNABLE;
-
   release(&ptable.lock);
 
   return pid;
@@ -346,15 +346,20 @@ scheduler(void)
     acquire(&ptable.lock);
 
     int num_tickets = 0;
+    int runprocexists = 0;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if(p->state != RUNNABLE) {
-        continue;
-      }
-      num_tickets += p->tickets;
+      if(p->state == RUNNABLE) {
+        num_tickets += p->tickets;
+        runprocexists = 1;
+      }     
     }
 
-    unsigned winner = random_range(num_tickets);
-    winner += 1;
+    if(runprocexists == 0) {
+      release(&ptable.lock);
+      continue;
+    }
+    // cprintf("total tickets: %d\n", num_tickets);
+    unsigned winner = random_range(num_tickets) % num_tickets;
     int ticket_index = 0;
 
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -365,6 +370,7 @@ scheduler(void)
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       ticket_index += p->tickets;
+      // cprintf("p tickets: %d\n", p->tickets);
       if (ticket_index <= winner) {
         continue;
       }

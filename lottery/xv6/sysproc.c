@@ -108,7 +108,11 @@ int sys_settickets(void) {
   int ticketnum;
   struct proc *curproc = myproc();
 
-  argint(0, &ticketnum);
+  if (argint(0, &ticketnum) < 0) {
+    return -1;
+  }
+
+  // cprintf("tickets: %d\n", ticketnum);
   curproc->tickets = ticketnum;
   return 0;
 }
@@ -117,27 +121,6 @@ int sys_gettickets(void) {
   return myproc()->tickets;
 }
 
-// int sys_getprocessinfo(void) {
-//   int np;
-//   struct processes_info *p;
-
-//   np = getnumprocesses();
-//   // traverses ptable for number of non-UNUSED process
-//   argptr(0, &p, sizeof(*p));
-//   p->num_processes = np;
-
-//   struct proc *proc;
-//   int i;
-//   for(i = 0; i < np; i++) {
-//     // assigns values for each ith non-UNUSED process
-//     proc = getproc(i);
-//     p->pids[i] = proc->pid;
-//     p->times_scheduled[i] = proc->times_scheduled;
-//     p->tickets[i] = proc->tickets;
-//   }
-
-//   return 0;
-// }
 
 int sys_getprocessesinfo(void) {
   struct processes_info *p;
