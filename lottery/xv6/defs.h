@@ -124,6 +124,7 @@ void            wakeup(void*);
 void            yield(void);
 int             getprocessesinfo(struct processes_info * p);
 unsigned        random_range(unsigned max);
+int             settickets(int tickets);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

@@ -337,6 +337,7 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  int just_ran;
   
   for(;;){
     // Enable interrupts on this processor.
@@ -358,10 +359,11 @@ scheduler(void)
       release(&ptable.lock);
       continue;
     }
-    // cprintf("total tickets: %d\n", num_tickets);
-    unsigned winner = random_range(num_tickets) % num_tickets;
+    
+    unsigned winner = random_range(num_tickets);
     int ticket_index = 0;
 
+    just_ran = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -371,8 +373,11 @@ scheduler(void)
       // before jumping back to us.
       ticket_index += p->tickets;
       // cprintf("p tickets: %d\n", p->tickets);
-      if (ticket_index <= winner) {
+      if (ticket_index < winner) {
         continue;
+      }
+      else {
+        just_ran = 1;
       }
 
       c->proc = p;
@@ -382,6 +387,9 @@ scheduler(void)
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
+      if (just_ran) {
+        break;
+      }
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
@@ -587,6 +595,12 @@ int getprocessesinfo(struct processes_info * p) {
   }
   p->num_processes = np;
   release(&ptable.lock);
+  return 0;
+}
+
+int settickets(int tickets) {
+  struct proc* curproc = myproc();
+  curproc->tickets = tickets;
   return 0;
 }
 

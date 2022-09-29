@@ -106,15 +106,10 @@ int sys_shutdown(void)
 
 int sys_settickets(void) {
   int ticketnum;
-  struct proc *curproc = myproc();
-
   if (argint(0, &ticketnum) < 0) {
     return -1;
   }
-
-  // cprintf("tickets: %d\n", ticketnum);
-  curproc->tickets = ticketnum;
-  return 0;
+  return settickets(ticketnum);
 }
 
 int sys_gettickets(void) {
