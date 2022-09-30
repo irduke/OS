@@ -10,6 +10,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct processes_info;
 
 // bio.c
 void            binit(void);
@@ -121,6 +122,9 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+int             getprocessesinfo(struct processes_info * p);
+unsigned        random_range(unsigned max);
+int             settickets(int tickets);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

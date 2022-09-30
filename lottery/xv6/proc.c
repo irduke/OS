@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "processesinfo.h"
 
 struct {
   struct spinlock lock;
@@ -19,6 +20,11 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+//RNG stuff
+static unsigned random_seed = 12;
+#define RANDOM_MAX ((1u << 31u) - 1u)
+unsigned random_range(unsigned max);
 
 void
 pinit(void)
@@ -138,6 +144,8 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
+  p->tickets = 10;
+  p->times_scheduled = 0;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -200,6 +208,9 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
+  np->times_scheduled = 0;
+  
+
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
@@ -213,9 +224,10 @@ fork(void)
   pid = np->pid;
 
   acquire(&ptable.lock);
-
+  np->tickets = curproc->tickets;
+  // np->tickets = 0;
+  // cprintf("curproc tickets: %d\n", curproc->tickets);
   np->state = RUNNABLE;
-
   release(&ptable.lock);
 
   return pid;
@@ -325,6 +337,7 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  int just_ran;
   
   for(;;){
     // Enable interrupts on this processor.
@@ -332,6 +345,25 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    int num_tickets = 0;
+    int runprocexists = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->state == RUNNABLE) {
+        num_tickets += p->tickets;
+        runprocexists = 1;
+      }     
+    }
+
+    if(runprocexists == 0) {
+      release(&ptable.lock);
+      continue;
+    }
+    
+    unsigned winner = random_range(num_tickets);
+    int ticket_index = 0;
+
+    just_ran = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -339,12 +371,25 @@ scheduler(void)
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+      ticket_index += p->tickets;
+      // cprintf("p tickets: %d\n", p->tickets);
+      if (ticket_index < winner) {
+        continue;
+      }
+      else {
+        just_ran = 1;
+      }
+
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->times_scheduled++;
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
+      if (just_ran) {
+        break;
+      }
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
@@ -533,36 +578,89 @@ procdump(void)
   }
 }
 
-// traverses ptable & returns number of non-UNUSED processes
-int getnumprocesses(void) {
-  int np;
-  struct proc *p;
-
+// returns the process with the given non-USUSED process index
+int getprocessesinfo(struct processes_info * p) {
+  int np = 0;
+  
   acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-    if(p->state == UNUSED) {
+  struct proc *proc;
+  for(proc = ptable.proc; proc < &ptable.proc[NPROC]; proc++) {
+    if(proc->state == UNUSED) {
       continue;
     }
+    p->pids[np] = proc->pid;
+    p->times_scheduled[np] = proc->times_scheduled;
+    p->tickets[np] = proc->tickets;
     np++;
   }
+  p->num_processes = np;
   release(&ptable.lock);
-
-  return np;
+  return 0;
 }
 
-// returns the process with the given non-USUSED process index
-struct proc* getproc(int i) {
-  struct proc *p;
-  int ith = 0;
+int settickets(int tickets) {
+  struct proc* curproc = myproc();
+  curproc->tickets = tickets;
+  return 0;
+}
 
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-    if(p->state != UNUSED && ith == i)  {
-      ith++;
-      return p;
-    }
+//RNG
+
+unsigned lcg_parkmiller(unsigned *state)
+{
+    const unsigned N = 0x7fffffff;
+    const unsigned G = 48271u;
+
+    /*  
+        Indirectly compute state*G%N.
+
+        Let:
+          div = state/(N/G)
+          rem = state%(N/G)
+
+        Then:
+          rem + div*(N/G) == state
+          rem*G + div*(N/G)*G == state*G
+
+        Now:
+          div*(N/G)*G == div*(N - N%G) === -div*(N%G)  (mod N)
+
+        Therefore:
+          rem*G - div*(N%G) === state*G  (mod N)
+
+        Add N if necessary so that the result is between 1 and N-1.
+    */
+    unsigned div = *state / (N / G);  /* max : 2,147,483,646 / 44,488 = 48,271 */
+    unsigned rem = *state % (N / G);  /* max : 2,147,483,646 % 44,488 = 44,487 */
+
+    unsigned a = rem * G;        /* max : 44,487 * 48,271 = 2,147,431,977 */
+    unsigned b = div * (N % G);  /* max : 48,271 * 3,399 = 164,073,129 */
+
+    return *state = (a > b) ? (a - b) : (a + (N - b));
+}
+
+unsigned next_random() {
+    return lcg_parkmiller(&random_seed);
+}
+
+// void init_random() {
+//   rtcdate now;
+//   cmostime(&now);
+//   random_seed = now.second;  
+// }
+
+unsigned random_range(unsigned max) {
+  unsigned long num_bins, num_rand, bin_size, defect;
+  num_bins = (unsigned long) max + 1;
+  num_rand = (unsigned long) RANDOM_MAX + 1,
+  bin_size = num_rand / num_bins,
+  defect   = num_rand % num_bins;
+  
+  unsigned x;
+  do {
+    x = next_random();
   }
-  release(&ptable.lock);
+  while (num_rand - defect <= (unsigned long)x);
 
-  return -1;
+  return x/bin_size;
 }
