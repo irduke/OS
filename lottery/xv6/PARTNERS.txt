@@ -1,0 +1,8 @@
+isaac duke (ird2dpj)
+	- formed the basis of the random number generator
+	- collaborated to finish the remaining algorithm functionality
+	- helped to debug
+sarah gould (sg4sgz)
+	- formed the basis of the two system calls
+	- collaborated to finish the remaining algorithm functionality
+	- helped to debug & submitted final version
