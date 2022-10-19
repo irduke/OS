@@ -78,7 +78,9 @@ void* simulate_life_byThread(void* args) {
         
         /* now that we computed next_state, make it the current state */
         pthread_barrier_wait(barrier);
-        swap(state, next_state);
+        if(threadId+1 == numThreads) { // only need to swap once (last thread)
+            swap(state, next_state);
+        } 
         pthread_barrier_wait(barrier);
     }
     return NULL;
