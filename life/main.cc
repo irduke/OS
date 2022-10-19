@@ -35,7 +35,7 @@ TestFunction test_functions[] = {
     { std::bind(&simulate_life_parallel, 3, _1, _2), "3 threads" },
     { std::bind(&simulate_life_parallel, 4, _1, _2), "4 threads" },
     { std::bind(&simulate_life_parallel, 8, _1, _2), "8 threads" },
-    { std::bind(&simulate_life_parallel, 40, _1, _2), "40 threads" },
+    { std::bind(&simulate_life_parallel, 40, _1, _2), "40 threads" }
     //
 };
 
