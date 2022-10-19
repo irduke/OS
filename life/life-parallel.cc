@@ -62,23 +62,23 @@ void* simulate_life_byThread(void* args) {
                  * and count the number of live (true) cells in the window. */
                 for (int y_offset = -1; y_offset <= 1; ++y_offset) {
                     for (int x_offset = -1; x_offset <= 1; ++x_offset) {
-                        if (state->at(x + x_offset, y + y_offset)) {
+                        if (state.at(x + x_offset, y + y_offset)) {
                             ++live_in_window;
                         }
                     }
                 }
                 /* Cells with 3 live neighbors remain or become live.
                    Live cells with 2 live neighbors remain live. */
-                next_state->at(x, y) = (
+                next_state.at(x, y) = (
                     live_in_window == 3 /* dead cell with 3 neighbors or live cell with 2 */ ||
-                    (live_in_window == 4 && state->at(x, y)) /* live cell with 3 neighbors */
+                    (live_in_window == 4 && state.at(x, y)) /* live cell with 3 neighbors */
                 );
             }
         }
         
         /* now that we computed next_state, make it the current state */
         pthread_barrier_wait(barrier);
-        swap(*state, *next_state);
+        swap(state, next_state);
         pthread_barrier_wait(barrier);
     }
     return NULL;
