@@ -1,0 +1,6 @@
+isaac duke (ird2dpj)
+	- worked on the code structure & helped debug
+	- build struct for thread arguments & thread creation
+sarah gould (sg4sgz)
+	- formed the basis of the codebase & the partitioning
+	- finalized the code and submitted the final version
