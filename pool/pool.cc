@@ -21,7 +21,6 @@ void * TaskLoop(void * args) {
         task->finished = true;
         pthread_cond_signal(&task->task_cv);
     }
-
     return NULL;
 }
 
@@ -39,8 +38,9 @@ Task::~Task() {
 ThreadPool::ThreadPool(int num_threads) {
     tasks_mutex = PTHREAD_MUTEX_INITIALIZER;
     pool_mutex = PTHREAD_MUTEX_INITIALIZER;
+    map_mutex = PTHREAD_MUTEX_INITIALIZER;
     task_ready = PTHREAD_COND_INITIALIZER;
-
+    
     thread_pool = std::vector<pthread_t>(num_threads);
 
     shutdown = false;
@@ -101,4 +101,10 @@ void ThreadPool::Stop() {
     }
     task_map.clear();
     pthread_mutex_unlock(&map_mutex);
+
+    pthread_mutex_lock(&pool_mutex);
+    for (size_t i = 0; i < thread_pool.size(); i++) {
+        pthread_join(thread_pool[i], NULL);
+    }
+    pthread_mutex_unlock(&pool_mutex);
 }
