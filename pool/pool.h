@@ -1,17 +1,29 @@
 #ifndef POOL_H_
 #include <string>
 #include <pthread.h>
+#include <deque>
+#include <vector>
 
 class Task {
 public:
     Task();
     virtual ~Task();
 
+    pthread_mutex_t task_lock;
+    pthread_cond_t task_cv;
+
     virtual void Run() = 0;  // implemented by subclass
 };
 
 class ThreadPool {
 public:
+    std::deque<Task*> tasks;
+    std::vector<pthread_t> thread_pool;
+    pthread_mutex_t tasks_mutex;
+    pthread_mutex_t pool_mutex;
+    pthread_cond_t task_ready;
+
+
     ThreadPool(int num_threads);
 
     // Submit a task with a particular name.
@@ -23,5 +35,9 @@ public:
     // Stop all threads. All tasks must have been waited for before calling this.
     // You may assume that SubmitTask() is not caled after this is called.
     void Stop();
+
 };
+
+void* TaskLoop(void * args);
+
 #endif
