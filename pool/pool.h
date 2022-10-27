@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <deque>
 #include <vector>
+#include <map>
 
 class Task {
 public:
@@ -11,6 +12,7 @@ public:
 
     pthread_mutex_t task_lock;
     pthread_cond_t task_cv;
+    bool finished;
 
     virtual void Run() = 0;  // implemented by subclass
 };
@@ -19,10 +21,12 @@ class ThreadPool {
 public:
     std::deque<Task*> tasks;
     std::vector<pthread_t> thread_pool;
+    std::map<std::string, Task*> task_map;
     pthread_mutex_t tasks_mutex;
     pthread_mutex_t pool_mutex;
+    pthread_mutex_t map_mutex;
     pthread_cond_t task_ready;
-
+    bool shutdown;
 
     ThreadPool(int num_threads);
 
