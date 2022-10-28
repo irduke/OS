@@ -1,45 +1,48 @@
 #include "pool.h"
 
-void * TaskLoop(void * args) {
+void* TaskLoop(void * args) {
     ThreadPool * tp = (ThreadPool *)args;
+    std::string task_name;
     Task* task;
 
     while (!(tp->shutdown)) {
-        //From here to the ******** I'm very unsure, not sure which lock to use for the CV
+        sem_wait(&tp->task_ready_sem);
+        if (tp->shutdown) break;
+
+        //pop from deque
         pthread_mutex_lock(&tp->tasks_mutex);
-        while (!(tp->tasks.empty())) {
-            pthread_cond_wait(&tp->task_ready, &tp->tasks_mutex);
-        }
-        //pop from deque and unlock mutex
-        task = tp->tasks.front();
+        task_name = tp->tasks.front().first;
+        task = tp->tasks.front().second;
         tp->tasks.pop_front();
         pthread_mutex_unlock(&tp->tasks_mutex);
-        /***********************/
 
         //Run the task
         task->Run();
-        task->finished = true;
-        pthread_cond_signal(&task->task_cv);
+
+        //Once completed add task to completed set and signal that it is done, then delete
+        pthread_mutex_lock(&tp->complete_tasks_mutex);
+        tp->completed_tasks.insert(task_name);
+        pthread_mutex_unlock(&tp->complete_tasks_mutex);
+        pthread_cond_broadcast(&tp->task_done);
+        delete task;
     }
     return NULL;
 }
 
 Task::Task() {
-    task_lock = PTHREAD_MUTEX_INITIALIZER;
-    task_cv = PTHREAD_COND_INITIALIZER;
-    finished = false;
+
 }
 
 Task::~Task() {
-    pthread_cond_destroy(&task_cv);
-    pthread_mutex_destroy(&task_lock);
+
 }
 
 ThreadPool::ThreadPool(int num_threads) {
     tasks_mutex = PTHREAD_MUTEX_INITIALIZER;
     pool_mutex = PTHREAD_MUTEX_INITIALIZER;
-    map_mutex = PTHREAD_MUTEX_INITIALIZER;
-    task_ready = PTHREAD_COND_INITIALIZER;
+    complete_tasks_mutex = PTHREAD_MUTEX_INITIALIZER;
+    task_done = PTHREAD_COND_INITIALIZER;
+    sem_init(&task_ready_sem, 0, 0);
     
     thread_pool = std::vector<pthread_t>(num_threads);
 
@@ -47,64 +50,49 @@ ThreadPool::ThreadPool(int num_threads) {
 
     pthread_mutex_lock(&pool_mutex);
     for (int i = 0; i < num_threads; i++) {
-        thread_pool[i] = pthread_create(&thread_pool[i], NULL, TaskLoop, (void *)this);
+        pthread_create(&thread_pool[i], NULL, TaskLoop, (void *)this);
     }
     pthread_mutex_unlock(&pool_mutex);
 }
 
 void ThreadPool::SubmitTask(const std::string &name, Task* task) {
-    if (task_map.count(name)) {
-        perror("Task already in queue\n");
-        exit(1);
-    }
-    else {
-        //Add task to queue
-        pthread_mutex_lock(&tasks_mutex);
-        tasks.push_back(task);
-        pthread_mutex_unlock(&tasks_mutex);
-        
-        //Lock map
-        pthread_mutex_lock(&map_mutex);
-        task_map.insert({name, task});
-        //Alert threads there is a task ready
-        pthread_cond_broadcast(&task_ready);
-        //Release lock
-        pthread_mutex_unlock(&map_mutex);
-    }
+    //Add task to queue
+    pthread_mutex_lock(&tasks_mutex);
+    tasks.push_back({name, task});
+    pthread_mutex_unlock(&tasks_mutex);
+    //Alert threads there is a task ready
+    sem_post(&task_ready_sem);
+
 }
 
 void ThreadPool::WaitForTask(const std::string &name) {
-    Task * waiting_task = task_map.at(name);
-    pthread_mutex_lock(&waiting_task->task_lock);
-    while (!waiting_task->finished) {
-        pthread_cond_wait(&waiting_task->task_cv, &waiting_task->task_lock);
+    pthread_mutex_lock(&complete_tasks_mutex);
+    while(completed_tasks.count(name) == 0) {
+        pthread_cond_wait(&task_done, &complete_tasks_mutex);
     }
-    //Task is completed, lock map and delete entry
-    pthread_mutex_unlock(&waiting_task->task_lock);
-    pthread_mutex_destroy(&waiting_task->task_lock);
-    pthread_cond_destroy(&waiting_task->task_cv);
-    pthread_mutex_lock(&map_mutex);
-    task_map.erase(name);
-    pthread_mutex_unlock(&map_mutex);
+    //exits when cv is signaled and task is done, delete entry in set
+    completed_tasks.erase(name);
+    pthread_mutex_unlock(&complete_tasks_mutex);
 }
 
 void ThreadPool::Stop() {
     shutdown = true;
-    pthread_mutex_lock(&map_mutex);
-    std::map<std::string, Task*>::iterator it;
-    for (it = task_map.begin(); it != task_map.end(); it++) {
-        Task* currtask = it->second;
-        pthread_mutex_lock(&currtask->task_lock);
-        pthread_cond_destroy(&currtask->task_cv);
-        pthread_mutex_unlock(&currtask->task_lock);
-        pthread_mutex_destroy(&currtask->task_lock);
-    }
-    task_map.clear();
-    pthread_mutex_unlock(&map_mutex);
 
     pthread_mutex_lock(&pool_mutex);
+    for (size_t i = 0; i < thread_pool.size(); i++) {
+        sem_post(&task_ready_sem);
+    }
     for (size_t i = 0; i < thread_pool.size(); i++) {
         pthread_join(thread_pool[i], NULL);
     }
     pthread_mutex_unlock(&pool_mutex);
+    //cleanup
+    thread_pool.clear();
+    tasks.clear();
+    completed_tasks.clear();
+    pthread_mutex_destroy(&tasks_mutex);
+    pthread_mutex_destroy(&pool_mutex);
+    pthread_mutex_destroy(&complete_tasks_mutex);
+    pthread_cond_destroy(&task_done);
+    sem_destroy(&task_ready_sem);
 }

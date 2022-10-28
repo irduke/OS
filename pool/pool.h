@@ -4,29 +4,32 @@
 #include <deque>
 #include <vector>
 #include <map>
-#include <iostream>
+#include <semaphore.h>
+#include <set>
 
 class Task {
 public:
     Task();
     virtual ~Task();
 
-    pthread_mutex_t task_lock;
-    pthread_cond_t task_cv;
-    bool finished;
+    // pthread_mutex_t task_lock;
+    // pthread_cond_t task_cv;
+    // bool finished;
 
     virtual void Run() = 0;  // implemented by subclass
 };
 
 class ThreadPool {
 public:
-    std::deque<Task*> tasks;
+    std::deque<std::pair<std::string, Task*>> tasks;
     std::vector<pthread_t> thread_pool;
-    std::map<std::string, Task*> task_map;
+    std::set<std::string> completed_tasks;
+
+    pthread_mutex_t complete_tasks_mutex;
     pthread_mutex_t tasks_mutex;
     pthread_mutex_t pool_mutex;
-    pthread_mutex_t map_mutex;
-    pthread_cond_t task_ready;
+    pthread_cond_t task_done;
+    sem_t task_ready_sem;
     bool shutdown;
 
     ThreadPool(int num_threads);
@@ -38,7 +41,7 @@ public:
     void WaitForTask(const std::string &name);
 
     // Stop all threads. All tasks must have been waited for before calling this.
-    // You may assume that SubmitTask() is not caled after this is called.
+    // You may assume that SubmitTask() is not called after this is called.
     void Stop();
 
 };
