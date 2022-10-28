@@ -1,0 +1,6 @@
+isaac duke (ird2dpj)
+	- formed the basis of the codebase & the final logic
+	- helped to debug 
+sarah gould (sg4sgz)
+	- worked on initial approach and helped to debug
+    - finalized the code and submitted the final version
