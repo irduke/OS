@@ -102,3 +102,23 @@ int sys_shutdown(void)
   shutdown();
   return 0;
 }
+
+int sys_getpagetableentry(void) {
+  int pid, address;
+  if (argint(0, &pid) < 0 || argint(1, &address) < 0) {
+    return -1;
+  }
+  return getpagetableentry(pid, address);
+}
+
+int sys_isphysicalpagefree(void) {
+  int ppn;
+  if(argint(0, &ppn) < 0) {
+    return -1;
+  }
+  return isphysicalpagefree(ppn);
+}
+
+int sys_dumppagetable(void) {
+  return 0;
+}

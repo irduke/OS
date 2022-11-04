@@ -532,3 +532,22 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int getpagetableentry(int pid, int address) {
+  acquire(&ptable.lock);
+  struct proc *proc;
+  pte_t *pgtab;
+  for(proc = ptable.proc; proc < &ptable.proc[NPROC]; proc++) {
+    if(proc->pid != pid) {
+      continue;
+    }
+    pde_t *pgdir = proc->pgdir;
+    pde_t *pte = &pgdir[PDX(address)];
+    if(*pte & PTE_P) {
+      pgtab = (pte_t*)P2V(PTE_ADDR(*pte));
+      return pgtab[PTX(address)];
+    }
+  }
+  release(&ptable.lock);
+  return 0;
+}

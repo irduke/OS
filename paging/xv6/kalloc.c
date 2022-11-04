@@ -95,3 +95,17 @@ kalloc(void)
   return (char*)r;
 }
 
+int isphysicalpagefree(int ppn) {
+  struct run *r;
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+  r = kmem.freelist;
+  while(r->next != 0x0) {
+    if(((uint)(ppn) << 12) == (V2P(r) & 0x3FF))
+      return 1;
+    r = r->next;
+  }
+  if(kmem.use_lock)
+    release(&kmem.lock);
+  return 0;
+}
