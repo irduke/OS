@@ -66,6 +66,25 @@ int getpagetableentry(int pid, int address) {
   }
 }
 
+int dumppagetable(int pid) {
+  struct proc *proc = getprocfrompid(pid);
+  cprintf("START PAGE TABLE (pid %d) \n", pid);
+  for(uint pte = 0x0; pte < proc->sz; pte += PGSIZE) {
+    pte_t *pgtab;
+    pgtab = walkpgdir(proc->pgdir, (void *)pte, 0);
+    cprintf("%x ", (pte >> 12)); // vpn
+    if(*pgtab & PTE_P) cprintf("P ");   // present
+    else cprintf("- ");
+    if(*pgtab & PTE_U)  cprintf("U ");  // user-mode
+    else cprintf("- ");
+    if(*pgtab & PTE_W) cprintf("W ");   // writable
+    else cprintf("- ");
+    cprintf("%x\n", (V2P(pgtab) >> 12));
+  }
+  cprintf("END PAGE TABLE\n");
+  return 0;
+}
+
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
