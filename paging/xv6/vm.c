@@ -54,6 +54,18 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   return &pgtab[PTX(va)];
 }
 
+int getpagetableentry(int pid, int address) {
+  struct proc *proc = getprocfrompid(pid);
+  pte_t *pgtab;
+  pgtab = walkpgdir(proc->pgdir, (void *)address, 0);
+  if(pgtab == 0x0) {
+    return 0;
+  }
+  else {
+    return *pgtab;
+  }
+}
+
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.

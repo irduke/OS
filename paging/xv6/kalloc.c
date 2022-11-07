@@ -101,8 +101,10 @@ int isphysicalpagefree(int ppn) {
     acquire(&kmem.lock);
   r = kmem.freelist;
   while(r->next != 0x0) {
-    if(((uint)(ppn) << 12) == (V2P(r) & 0x3FF))
+    if(((uint)(ppn) << 12) == (V2P(r))) {
+      release(&kmem.lock);
       return 1;
+    }
     r = r->next;
   }
   if(kmem.use_lock)
