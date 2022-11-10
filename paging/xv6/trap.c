@@ -36,6 +36,21 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
+  //Check for page fault flag
+  if(tf->trapno == T_PGFLT) {
+    //Check if page fault is from kernel mode
+    if ((tf->cs & 3) == 0){
+      cprintf("Page fault from kernel\n");
+      
+    }
+    //exit if handler in vm.c set proc to be killed
+    dynamic_page_alloc_handler();
+    if (myproc()->killed) {
+      exit();
+    }
+    return;
+  }
+
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();

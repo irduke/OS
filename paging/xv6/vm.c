@@ -423,3 +423,37 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 //PAGEBREAK!
 // Blank page.
 
+void dynamic_page_alloc_handler(void) {
+  struct proc *curr_proc = myproc();
+  uint pgfault_addr = rcr2();
+  //Check bounds of new page
+  if (pgfault_addr >= curr_proc->sz) {
+    cprintf("Out of bounds access-> segfault\n");
+    curr_proc->killed = 1;
+    return;
+  }
+  //If bounds check passes then attempt to allocate new memory
+  char * mem = kalloc();
+  if (mem == 0) {
+    cprintf("Out of memory, killing current process\n");
+    curr_proc->killed = 1;
+    return;
+  }
+  //Clear page
+  memset(mem, 0, PGSIZE);
+  //Get rounded address and pgdir for mappages
+  uint a = PGROUNDDOWN(pgfault_addr);
+  pde_t * pgdir = curr_proc->pgdir;
+
+  if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
+    //Failed memory allocation
+    cprintf("Memory allocation failed\n");
+    kfree(mem);
+    curr_proc->killed = 1;
+    return;
+  }
+  //Flush TLB if page mapping succeeds
+  lcr3(V2P(myproc()->pgdir));
+  return;
+}
+
