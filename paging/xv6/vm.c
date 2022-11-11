@@ -79,7 +79,7 @@ int dumppagetable(int pid) {
     else cprintf("- ");
     if(*pgtab & PTE_W) cprintf("W ");   // writable
     else cprintf("- ");
-    cprintf("%x\n", (V2P(pgtab) >> 12));
+    cprintf("%x\n", (PTE_ADDR(*pgtab) >> PTXSHIFT) & 0xFF);
   }
   cprintf("END PAGE TABLE\n");
   return 0;
@@ -426,12 +426,21 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 void dynamic_page_alloc_handler(void) {
   struct proc *curr_proc = myproc();
   uint pgfault_addr = rcr2();
+
   //Check bounds of new page
-  if (pgfault_addr >= curr_proc->sz) {
+  if (pgfault_addr >= curr_proc->sz || pgfault_addr > KERNBASE) {
     cprintf("Out of bounds access-> segfault\n");
     curr_proc->killed = 1;
     return;
   }
+  //Check if page is being remapped or doesn't exist
+  uint pg_entry = getpagetableentry(curr_proc->pid, pgfault_addr);
+  if ((pg_entry & PTE_W)) {
+    cprintf("Invalid page access\n");
+    curr_proc->killed = 1;
+    return;
+  }
+
   //If bounds check passes then attempt to allocate new memory
   char * mem = kalloc();
   if (mem == 0) {
@@ -445,7 +454,7 @@ void dynamic_page_alloc_handler(void) {
   uint a = PGROUNDDOWN(pgfault_addr);
   pde_t * pgdir = curr_proc->pgdir;
 
-  if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
+  if(mappages(pgdir, (void*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
     //Failed memory allocation
     cprintf("Memory allocation failed\n");
     kfree(mem);
