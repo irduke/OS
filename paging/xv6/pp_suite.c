@@ -75,6 +75,7 @@ static char *tests[][11] = {
         "-write-end=0x2020",
         (char*) 0,
     },
+    // Failing
     {
         "alloc",
         "-size=0x500000",

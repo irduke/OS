@@ -537,7 +537,7 @@ struct proc* getprocfrompid(int pid) {
   acquire(&ptable.lock);
   struct proc *proc;
   for(proc = ptable.proc; proc < &ptable.proc[NPROC]; proc++) {
-    if(proc->pid != pid) {
+    if(proc->pid == pid) {
       release(&ptable.lock);
       return proc;
     }
