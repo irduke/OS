@@ -356,8 +356,8 @@ copyuvm(pde_t *pgdir, uint sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
+    // if(!(*pte & PTE_P))
+    //   panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
@@ -433,9 +433,9 @@ void dynamic_page_alloc_handler(void) {
     curr_proc->killed = 1;
     return;
   }
-  //Check if page is being remapped or doesn't exist
+  // Checking if hitting guard page
   uint pg_entry = getpagetableentry(curr_proc->pid, pgfault_addr);
-  if ((pg_entry & PTE_W)) {
+  if((pg_entry & PTE_P) && !(pg_entry & PTE_U)) {
     cprintf("Invalid page access\n");
     curr_proc->killed = 1;
     return;
@@ -461,6 +461,7 @@ void dynamic_page_alloc_handler(void) {
     curr_proc->killed = 1;
     return;
   }
+
   //Flush TLB if page mapping succeeds
   lcr3(V2P(myproc()->pgdir));
   return;
