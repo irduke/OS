@@ -68,6 +68,10 @@ int getpagetableentry(int pid, int address) {
 
 int dumppagetable(int pid) {
   struct proc *proc = getprocfrompid(pid);
+  if(proc == 0) {   // Error message when no process exists
+    cprintf("Process does not exist\n");
+    return -1;
+  }
   cprintf("START PAGE TABLE (pid %d) \n", pid);
   for(uint pte = 0x0; pte < proc->sz; pte += PGSIZE) {
     pte_t *pgtab;
