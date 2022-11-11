@@ -1,0 +1,8 @@
+isaac duke (ird2dpj)
+    - helped debug checkpoint
+    - formed the basis of the memory allocation implementation
+    - collaborated to complete final logic
+sarah gould (sg4sgz)
+    - formed the basis of the first checkpoint
+    - collaborated on final implementation & cleaned up error handling
+	- helped to debug & submitted final version
