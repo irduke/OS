@@ -13,8 +13,13 @@ static char bitmap[TOTAL_BLOCKS];
 int get_free_block()
 {
   // fill in here
-  assert(blockno < TOTAL_BLOCKS);
-  assert(bitmap[blockno]);
+  int blockno;
+  for(blockno = 0; blockno < TOTAL_BLOCKS; blockno+=1024) {
+    if(bitmap[blockno]) continue;
+    else return blockno;
+  }
+  // assert(blockno < TOTAL_BLOCKS);
+  // assert(bitmap[blockno]);
   return blockno;
 }
 
@@ -26,7 +31,7 @@ void write_int(int pos, int val)
 
 void place_file(char *file, int uid, int gid)
 {
-  int i, nbytes = 0;
+  int i, j, nbytes = 0;
   int i2block_index, i3block_index;
   struct inode *ip;
   FILE *fpr;
@@ -50,16 +55,22 @@ void place_file(char *file, int uid, int gid)
     int blockno = get_free_block();
     ip->dblocks[i] = blockno;
     // fill in here
+    // fread(ip->dblocks[i], 1024, 1, fpr);
   }
 
   // fill in here if IBLOCKS needed
   // if so, you will first need to get an empty block to use for your IBLOCK
+  for (i = 0; i < N_IBLOCKS; i++){
+    for(j = 0; j < N_DBLOCKS; j++) {
+      // fill in
+    }
+  }
 
   ip->size = nbytes;  // total number of data bytes written for file
   printf("successfully wrote %d bytes of file %s\n", nbytes, file);
 }
 
-void main() // add argument handling
+void main(int argc, char *argv[]) // add argument handling
 {
   int i;
   FILE *outfile;
