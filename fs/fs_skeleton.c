@@ -5,7 +5,7 @@
 #include <assert.h>
 #include "inode.h"
 
-#define TOTAL_BLOCKS (10*1024)
+#define TOTAL_BLOCKS (10)
   // TODO: redefine total blocks so it can be dynamically allocated by nblocks
 
 static unsigned char *rawdata;
@@ -77,19 +77,26 @@ void main(int argc, char *argv[]) // add argument handling
 {
   int i;
   FILE *outfile;
-  int nblocks, iblocks, uid, gid, inodepos; // create
+
+  // create
+  int nblocks, iblocks, uid, gid, block, inodepos; 
+  char *input_file;
+  char *output_filename;
   
   // TODO: fix argument handling
 
-  // create
-  if(argv[0] == "-create") {
+  if(argv[0] == "-create" || argv[0] == "-insert") {
+    output_filename = argv[2];
     nblocks = atoi(argv[4]);
     iblocks = atoi(argv[6]);
+    input_file = argv[8];
     uid = atoi(argv[10]);
     gid = atoi(argv[12]);
-    inodepos = atoi(argv[14]);
+    block = atoi(argv[14]);
+    inodepos = atoi(argv[16]);
   }
 
+  // TA added this 
   rawdata = (unsigned char*)malloc(nblocks*BLOCK_SZ);
   bitmap = (char*)malloc(nblocks);
 
@@ -100,6 +107,7 @@ void main(int argc, char *argv[]) // add argument handling
   }
 
   // fill in here to place file 
+  // place_file(input_file, uid, gid);
 
   i = fwrite(rawdata, 1, TOTAL_BLOCKS*BLOCK_SZ, outfile);
   if (i != TOTAL_BLOCKS*BLOCK_SZ) {
