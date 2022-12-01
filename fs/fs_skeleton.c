@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <errno.h>
 #include <assert.h>
 #include "inode.h"
@@ -42,14 +42,14 @@ void place_file(char *file, int uid, int gid)
   ip->nlink = 1;
   ip->uid = uid;
   ip->gid = gid;
-  ip->ctime = random();
-  ip->mtime = random();
-  ip->atime = random();
+  ip->ctime = rand();
+  ip->mtime = rand();
+  ip->atime = rand();
 
   fpr = fopen(file, "rb");
   if (!fpr) {
     perror(file);
-    exit(-1);
+    exit(1);
   }
 
   for (i = 0; i < N_DBLOCKS; i++) {
@@ -73,8 +73,12 @@ void place_file(char *file, int uid, int gid)
   printf("successfully wrote %d bytes of file %s\n", nbytes, file);
 }
 
-void main(int argc, char *argv[]) // add argument handling
+int main(int argc, char *argv[]) 
 {
+  if (argc < 2) {
+    printf("Insufficient arguments\n");
+    exit(1);
+  }
   int i;
   FILE *outfile;
 
@@ -83,17 +87,34 @@ void main(int argc, char *argv[]) // add argument handling
   char *input_file;
   char *output_filename;
   
-  // TODO: fix argument handling
+  // Number of args should be 18 for create/insert, 10 for extract
+  if (strcmp(argv[1], "-create") == 0 || strcmp(argv[1], "-insert") == 0) {
+    if (argc != 18) {
+      printf("Incorrect number of arguments, got: %d, expected 18", argc);
+    }
+    else {
+      output_filename = argv[3];
+      nblocks = atoi(argv[5]);
+      iblocks = atoi(argv[7]);
+      input_file = argv[9];
+      uid = atoi(argv[11]);
+      gid = atoi(argv[13]);
+      block = atoi(argv[15]);
+      inodepos = atoi(argv[17]);
 
-  if(argv[0] == "-create" || argv[0] == "-insert") {
-    output_filename = argv[2];
-    nblocks = atoi(argv[4]);
-    iblocks = atoi(argv[6]);
-    input_file = argv[8];
-    uid = atoi(argv[10]);
-    gid = atoi(argv[12]);
-    block = atoi(argv[14]);
-    inodepos = atoi(argv[16]);
+      // TODO: add handling for create vs insert
+
+    }
+  }
+  else if (strcmp(argv[1], "-extract") == 0) {
+    if (argc != 10) {
+      printf("Incorrect number of arguments, got: %d, expected 10", argc);
+      exit(1);
+    }
+  }
+  else {
+    printf("Invalid arguments\n");
+    exit(1);
   }
 
   // TA added this 
@@ -103,7 +124,7 @@ void main(int argc, char *argv[]) // add argument handling
   outfile = fopen(output_filename, "wb");
   if (!outfile) {
     perror("datafile open");
-    exit(-1);
+    exit(1);
   }
 
   // fill in here to place file 
@@ -112,15 +133,15 @@ void main(int argc, char *argv[]) // add argument handling
   i = fwrite(rawdata, 1, TOTAL_BLOCKS*BLOCK_SZ, outfile);
   if (i != TOTAL_BLOCKS*BLOCK_SZ) {
     perror("fwrite");
-    exit(-1);
+    exit(1);
   }
 
   i = fclose(outfile);
   if (i) {
     perror("datafile close");
-    exit(-1);
+    exit(1);
   }
 
   printf("Done.\n");
-  return;
+  return 0;
 }
