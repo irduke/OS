@@ -1,0 +1,8 @@
+isaac duke (ird2dpj)
+	- worked on the code structure & helped debug
+	- created extract functionality
+sarah gould (sg4sgz)
+	- created basis for code structure
+	- worked on create/insert
+
+Perp could be John Bradley ?

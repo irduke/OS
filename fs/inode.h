@@ -4,6 +4,14 @@
 #define BLOCK_SZ 1024
 #define N_DBLOCKS 12
 #define N_IBLOCKS 3
+#define N_DBLOCKS_IBLOCK 256
+
+#define TOTAL_BLOCKS (10*1024)
+
+#define DBLOCKS_SIZE (BLOCK_SZ * N_DBLOCKS)
+#define IBLOCKS_SIZE (N_DBLOCKS_IBLOCK * BLOCK_SZ)
+#define INODE_SIZE  100
+
 
 struct inode {
   int mode;	/* Unknown field */
