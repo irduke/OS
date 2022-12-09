@@ -3,7 +3,7 @@ CFLAGS=-std=c99
 
 all: disk_image
 
-disk_image: fs_skeleton.o
+disk_image: fs.o
 	$(CXX) $(CFALGS) -o $@ $^ 
 
 .PHONY: cleans

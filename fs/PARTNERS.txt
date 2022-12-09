@@ -4,5 +4,3 @@ isaac duke (ird2dpj)
 sarah gould (sg4sgz)
 	- created basis for code structure
 	- worked on create/insert
-
-Perp could be John Bradley ?
